@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    runs-on: macos-latest
+
+    env:
+      NOTARIZE_USERNAME: ${{ secrets.NOTARIZE_USERNAME }}
+      NOTARIZE_PASSWORD: ${{ secrets.NOTARIZE_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install ARM target
+        run: rustup update
+        #  && rustup target add aarch64-apple-darwin
+      - name: Import Certificate
+        uses: apple-actions/import-codesign-certs@v1
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+      - name: Make DMG
+        run: make dmg
+      - name: Rename
+        run: |
+          cp ./target/release/macos/MFEKglif.dmg ./target/release/macos/MFEKglif-macos.dmg
+      - name: "Notarize Release Build"
+        run: |
+          npx notarize-cli --file ./target/release/macos/MFEKglif-macos.dmg --bundle-id mfek.glif --asc-provider AAB8V3U37M
+      - name: "Staple Release Build"
+        uses: devbotsxyz/xcode-staple@v1
+        with:
+          product-path: "./target/release/macos/MFEKglif-macos.dmg"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: MFEKglif-macos
+          path: |
+            target/release/macos/MFEKglif-macos.dmg
+
