@@ -8,7 +8,8 @@
     trait_alias,
     const_trait_impl,
     generic_const_exprs,
-    adt_const_params
+    adt_const_params,
+    unsized_const_params
 )]
 
 use crate::command::{Command, CommandInfo, CommandMod};
